@@ -17,7 +17,7 @@ concurrency:
 jobs:
   changes:
     name: Detect changes
-    runs-on: ubuntu-24.04
+    runs-on: ${{ github.repository == 'foxion37/herdr-web-ui' && github.ref == 'refs/heads/main' && contains(fromJSON('["push","workflow_dispatch","schedule"]'), github.event_name) && 'mac-mini-linux-arm64' || 'ubuntu-24.04' }}
     timeout-minutes: 5
     outputs:
       code: ${{ steps.filter.outputs.code }}
@@ -125,7 +125,7 @@ jobs:
   fast:
     name: Fast checks
     needs: changes
-    runs-on: ubuntu-24.04
+    runs-on: ${{ github.repository == 'foxion37/herdr-web-ui' && github.ref == 'refs/heads/main' && contains(fromJSON('["push","workflow_dispatch","schedule"]'), github.event_name) && 'mac-mini-linux-arm64' || 'ubuntu-24.04' }}
     timeout-minutes: 10
     env:
       CHECK_DIR: ${{ github.workspace }}/.ci
@@ -148,7 +148,12 @@ jobs:
           restore-keys: |
             bun-linux-${{ runner.arch }}-${{ env.BUN_VERSION }}-
       - run: bun install --frozen-lockfile
+      - name: Validate workflow syntax on ARM64
+        if: runner.os == 'Linux' && runner.arch == 'ARM64'
+        run: actionlint -shellcheck=
       - run: bun run check fast
+        env:
+          UNIT_TEST_WORKERS: ${{ runner.environment == 'self-hosted' && '2' || '4' }}
       - name: Preserve check report and verification logs
         if: always()
         uses: actions/upload-artifact@v7
@@ -360,7 +365,7 @@ jobs:
     name: Integration and browser
     needs: [changes, integration, browser-main, browser-other]
     if: always()
-    runs-on: ubuntu-24.04
+    runs-on: ${{ github.repository == 'foxion37/herdr-web-ui' && github.ref == 'refs/heads/main' && contains(fromJSON('["push","workflow_dispatch","schedule"]'), github.event_name) && 'mac-mini-linux-arm64' || 'ubuntu-24.04' }}
     timeout-minutes: 5
     steps:
       - name: Check results
